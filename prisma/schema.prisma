@@ -4,10 +4,206 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider = "prisma-client"
+  provider = "prisma-client-js"
   output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum SubmissionStatus {
+  PASS
+  FAIL
+  COMPILE_ERROR
+  TIME_LIMIT_EXCEEDED
+  MEMORY_LIMIT_EXCEEDED
+  RUNTIME_ERROR
+}
+
+enum Language {
+  CPP
+  PYTHON
+  JAVA
+  JAVASCRIPT
+  TYPESCRIPT
+  GO
+  RUST
+}
+
+model User {
+  id             String          @id @default(cuid())
+  clerkId        String          @unique
+  username       String?         @unique
+  email          String          @unique
+  role           UserRole        @default(USER)
+  firstName      String?
+  lastName       String?
+  imageUrl       String?
+  submissions    Submission[]
+  programs       Program[]
+  solvedProblems SolvedProblem[]
+
+  // Gamification & Telemetry
+  xp         Int       @default(0)
+  streak     Int       @default(0)
+  lastActive DateTime?
+
+  // Competitive
+  contestParticipants ContestParticipant[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Program {
+  id             Int             @id @default(autoincrement())
+  title          String
+  description    String
+  difficulty     Difficulty
+  tags           String[]
+  examples       Json            @default("[]")
+  input          String
+  output         String
+  explanation    String
+  constraints    String
+  hints          String?
+  editorial      String?
+  testCases      TestCase[]
+  codeSnippets   CodeSnippet[]
+  solutions      Solution[]
+  submissions    Submission[]
+  solvedProblems SolvedProblem[]
+  userId         String
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Statistics & Popularity Metrics
+  totalSubmissions Int @default(0)
+  totalAccepted    Int @default(0)
+  likes            Int @default(0)
+  dislikes         Int @default(0)
+
+  // Competitive Contests association
+  contests Contest[] @relation("ContestPrograms")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([difficulty])
+}
+
+model Solution {
+  id          Int      @id @default(autoincrement())
+  programId   Int
+  language    Language
+  code        String
+  explanation String?
+  program     Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Submission {
+  id              Int              @id @default(autoincrement())
+  userId          String
+  programId       Int
+  language        Language
+  code            String
+  status          SubmissionStatus
+  runtimeMs       Int?
+  memoryKb        Int?
+  passedTestCases Int              @default(0)
+  totalTestCases  Int              @default(0)
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program         Program          @relation(fields: [programId], references: [id], onDelete: Cascade)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([userId])
+  @@index([programId])
+  @@index([status])
+}
+
+model SolvedProblem {
+  id        String   @id @default(cuid())
+  userId    String
+  programId Int
+  solvedAt  DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, programId])
+  @@index([programId])
+}
+
+model Contest {
+  id           String               @id @default(cuid())
+  title        String
+  description  String?
+  startTime    DateTime
+  endTime      DateTime
+  programs     Program[]            @relation("ContestPrograms")
+  participants ContestParticipant[]
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  @@index([startTime])
+  @@index([endTime])
+}
+
+model ContestParticipant {
+  id        String   @id @default(cuid())
+  userId    String
+  contestId String
+  score     Int      @default(0)
+  rank      Int?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest   Contest  @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, contestId])
+  @@index([contestId, score])
+  @@index([contestId, rank])
+}
+
+model TestCase {
+  id             Int      @id @default(autoincrement())
+  programId      Int
+  input          String
+  expectedOutput String
+  isSample       Boolean  @default(false)
+  isHidden       Boolean  @default(true)
+  explanation    String?
+  order          Int      @default(0)
+  program        Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([programId])
+  @@index([programId, isSample])
+}
+
+model CodeSnippet {
+  id        Int      @id @default(autoincrement())
+  programId Int
+  language  Language
+  code      String
+  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([programId, language])
+  @@index([programId])
 }
