@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useCallback, useMemo } from "react";
+import { ConfettiBlast } from "@/components/ui/confetti-blast";
 import { Language } from "@/generated/prisma";
 import { LANGUAGE_LABELS } from "@/lib/problems/utils";
 import type { ProblemRunResponse, PublicProblemDetail } from "@/types/problem";
@@ -71,6 +72,7 @@ export function ProblemEditorPanel({ problem, onSolved }: ProblemEditorPanelProp
   const [resultTab, setResultTab] = useState<ResultTab>("testcase");
   const [result, setResult] = useState<ProblemRunResponse | null>(null);
   const [busyAction, setBusyAction] = useState<"run" | "submit" | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   // Editor settings state
   const [settings, setSettings] = useState<EditorSettings>(DEFAULT_SETTINGS);
@@ -124,8 +126,9 @@ export function ProblemEditorPanel({ problem, onSolved }: ProblemEditorPanelProp
         window.dispatchEvent(new Event("submission-complete"));
         // If all passed, fire solved callback
         const allPassed = payload.results?.length > 0 && payload.results.every((r) => r.status === "ACCEPTED");
-        if (allPassed && onSolved) {
-          onSolved();
+        if (allPassed) {
+          setShowConfetti(true);
+          onSolved?.();
         }
       }
     } catch (error) {
@@ -143,7 +146,8 @@ export function ProblemEditorPanel({ problem, onSolved }: ProblemEditorPanelProp
   }
 
   return (
-    <section className="flex min-h-[52rem] flex-col gap-3 lg:h-[calc(100vh-7rem)] lg:min-h-0">
+    <section className="relative flex min-h-[52rem] flex-col gap-3 lg:h-[calc(100vh-7rem)] lg:min-h-0">
+      <ConfettiBlast active={showConfetti} onComplete={() => setShowConfetti(false)} />
       {/* ── Toolbar ── */}
       <div className="relative flex min-h-14 flex-wrap items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-white px-3 dark:border-zinc-800 dark:bg-zinc-950">
         {/* Language selector */}

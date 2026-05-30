@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type React from "react";
 import { DIFFICULTY_STYLES, LANGUAGE_LABELS } from "@/lib/problems/utils";
 import type { PublicProblemDetail } from "@/types/problem";
@@ -9,6 +9,7 @@ import { ProblemTabs, type ProblemInfoTab } from "@/components/problems/problem-
 import {
   ArrowLeft,
   Braces,
+  CheckCircle2,
   FileCode2,
   Trophy,
   Loader2,
@@ -20,14 +21,67 @@ import {
   CheckCheck,
   Copy,
   Check,
+  FileInput,
+  FileOutput,
+  ShieldCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function TextBlock({ value }: { value: string | null | undefined }) {
-  if (!value) return null;
+function InlineText({ value }: { value: string }) {
+  const parts = value.split(/(`[^`]+`|\*\*[^*]+\*\*|\*[^*]+\*)/g);
+
   return (
-    <div className="whitespace-pre-wrap text-sm leading-7 text-zinc-700 dark:text-zinc-300">
-      {value}
+    <>
+      {parts.map((part, index) => {
+        if (part.startsWith("`") && part.endsWith("`")) {
+          return (
+            <code
+              key={`${part}-${index}`}
+              className="rounded border border-zinc-200 bg-zinc-100 px-1.5 py-0.5 font-mono text-[0.82em] text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200"
+            >
+              {part.slice(1, -1)}
+            </code>
+          );
+        }
+
+        if (
+          (part.startsWith("**") && part.endsWith("**")) ||
+          (part.startsWith("*") && part.endsWith("*"))
+        ) {
+          const trimBy = part.startsWith("**") ? 2 : 1;
+          return (
+            <strong key={`${part}-${index}`} className="font-semibold text-zinc-950 dark:text-zinc-50">
+              {part.slice(trimBy, -trimBy)}
+            </strong>
+          );
+        }
+
+        return <span key={`${part}-${index}`}>{part}</span>;
+      })}
+    </>
+  );
+}
+
+function TextBlock({ value, compact = false }: { value: string | null | undefined; compact?: boolean }) {
+  if (!value) return null;
+
+  const paragraphs = value
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  return (
+    <div
+      className={cn(
+        "space-y-3 text-sm text-zinc-700 dark:text-zinc-300",
+        compact ? "leading-6" : "leading-7"
+      )}
+    >
+      {paragraphs.map((paragraph, index) => (
+        <p key={`${paragraph}-${index}`} className="whitespace-pre-wrap">
+          <InlineText value={paragraph} />
+        </p>
+      ))}
     </div>
   );
 }
@@ -35,13 +89,24 @@ function TextBlock({ value }: { value: string | null | undefined }) {
 function Section({
   title,
   children,
+  icon: Icon,
+  framed = false,
 }: {
   title: string;
   children: React.ReactNode;
+  icon?: React.ComponentType<{ className?: string }>;
+  framed?: boolean;
 }) {
   return (
-    <section className="space-y-3">
-      <h3 className="font-mono text-[10px] font-black uppercase tracking-widest text-zinc-500">
+    <section
+      className={cn(
+        "space-y-3",
+        framed &&
+          "rounded-lg border border-zinc-200 bg-zinc-50/55 p-4 dark:border-zinc-800 dark:bg-zinc-900/20"
+      )}
+    >
+      <h3 className="flex items-center gap-2 font-mono text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+        {Icon && <Icon className="h-3.5 w-3.5 text-amber-500" />}
         {title}
       </h3>
       {children}
@@ -100,6 +165,17 @@ interface SolutionEntry {
   explanation: string | null;
 }
 
+interface SubmissionEntry {
+  id: number;
+  status: string;
+  language: string;
+  code: string;
+  runtimeMs: number | null;
+  passedTestCases: number;
+  totalTestCases: number;
+  createdAt: string;
+}
+
 interface ProblemDescriptionPanelProps {
   problem: PublicProblemDetail;
   isSolved?: boolean;
@@ -112,7 +188,7 @@ export function ProblemDescriptionPanel({
   onSolvedChange,
 }: ProblemDescriptionPanelProps) {
   const [activeTab, setActiveTab] = useState<ProblemInfoTab>("description");
-  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [submissions, setSubmissions] = useState<SubmissionEntry[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
   const [expandedSubmissions, setExpandedSubmissions] = useState<Record<number, boolean>>({});
 
@@ -125,14 +201,14 @@ export function ProblemDescriptionPanel({
     setExpandedSubmissions((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = useCallback(async () => {
     setLoadingSubmissions(true);
     try {
       const response = await fetch(`/api/problems/${problem.id}/submissions`, {
         cache: "no-store",
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { submissions?: SubmissionEntry[] };
         setSubmissions(data.submissions || []);
       }
     } catch (error) {
@@ -140,16 +216,16 @@ export function ProblemDescriptionPanel({
     } finally {
       setLoadingSubmissions(false);
     }
-  };
+  }, [problem.id]);
 
-  const fetchSolutions = async () => {
+  const fetchSolutions = useCallback(async () => {
     setLoadingSolutions(true);
     try {
       const response = await fetch(`/api/problems/${problem.id}/solutions`, {
         cache: "no-store",
       });
       if (response.ok) {
-        const data = await response.json();
+        const data = (await response.json()) as { solutions?: SolutionEntry[] };
         const list: SolutionEntry[] = data.solutions || [];
         setSolutions(list);
         if (list.length > 0 && !activeSolutionLanguage) {
@@ -161,16 +237,13 @@ export function ProblemDescriptionPanel({
     } finally {
       setLoadingSolutions(false);
     }
-  };
+  }, [activeSolutionLanguage, problem.id]);
 
-  useEffect(() => {
-    if (activeTab === "submissions") {
-      fetchSubmissions();
-    }
-    if (activeTab === "solutions") {
-      fetchSolutions();
-    }
-  }, [activeTab, problem.id]);
+  const handleTabChange = (tab: ProblemInfoTab) => {
+    setActiveTab(tab);
+    if (tab === "submissions") void fetchSubmissions();
+    if (tab === "solutions") void fetchSolutions();
+  };
 
   useEffect(() => {
     const handleSubmissionComplete = () => {
@@ -181,31 +254,30 @@ export function ProblemDescriptionPanel({
     return () => {
       window.removeEventListener("submission-complete", handleSubmissionComplete);
     };
-  }, [problem.id]);
+  }, [fetchSubmissions, onSolvedChange]);
 
   const activeSolution = solutions.find((s) => s.language === activeSolutionLanguage);
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950 lg:h-[calc(100vh-7rem)]">
-      <header className="flex min-h-14 items-center gap-3 border-b border-zinc-200 px-4 dark:border-zinc-800">
+    <section className="flex min-h-0 flex-col overflow-hidden rounded-md border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950 lg:h-[calc(100vh-7rem)]">
+      <header className="flex min-h-[3.25rem] items-center gap-3 border-b border-zinc-200 bg-white px-3.5 dark:border-zinc-800 dark:bg-zinc-950">
         <Link
           href="/problems"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-amber-600 dark:hover:bg-zinc-900 dark:hover:text-amber-400"
+          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-transparent text-zinc-500 transition-colors hover:border-zinc-200 hover:bg-zinc-50 hover:text-amber-600 dark:hover:border-zinc-800 dark:hover:bg-zinc-900 dark:hover:text-amber-400"
           aria-label="Back to problems"
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div className="min-w-0 flex-1">
-          <p className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-400">
+          <p className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-zinc-400">
             Problem #{String(problem.id).padStart(3, "0")}
           </p>
-          <h1 className="flex items-center gap-2 truncate text-sm font-bold text-zinc-900 dark:text-zinc-100">
+          <h1 className="mt-0.5 flex items-center gap-2 truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50">
             <span className="truncate">{problem.title}</span>
-            {/* Solved indicator — sharp checkmark badge */}
             {isSolved && (
               <span
                 title="You solved this problem!"
-                className="inline-flex shrink-0 items-center gap-1 rounded border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[8px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400"
+                className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[8px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-400"
               >
                 <CheckCheck className="h-2.5 w-2.5" />
                 Solved
@@ -215,33 +287,31 @@ export function ProblemDescriptionPanel({
         </div>
       </header>
 
-      <ProblemTabs activeTab={activeTab} onChange={setActiveTab} />
+      <ProblemTabs activeTab={activeTab} onChange={handleTabChange} />
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-5">
-        {/* ── Description tab ── */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">
         {activeTab === "description" && (
-          <div className="space-y-8">
-            <div>
+          <div className="space-y-6">
+            <div className="rounded-lg border border-zinc-200 bg-gradient-to-b from-zinc-50 to-white p-4 dark:border-zinc-800 dark:from-zinc-900/40 dark:to-zinc-950">
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span
-                  className={`rounded border px-2 py-0.5 font-mono text-[9px] font-bold uppercase ${DIFFICULTY_STYLES[problem.difficulty]}`}
+                  className={`rounded-full border px-2.5 py-1 font-mono text-[9px] font-bold uppercase ${DIFFICULTY_STYLES[problem.difficulty]}`}
                 >
                   {problem.difficulty}
                 </span>
-                {problem.acceptanceRate !== null && (
-                  <span className="font-mono text-[10px] text-zinc-500">
-                    {problem.acceptanceRate}% accepted
-                  </span>
-                )}
+                <span className="inline-flex items-center gap-1 rounded-full border border-zinc-200 bg-white px-2.5 py-1 font-mono text-[9px] font-bold uppercase text-zinc-500 dark:border-zinc-800 dark:bg-zinc-950">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500" />
+                  {problem.acceptanceRate !== null ? `${problem.acceptanceRate}% accepted` : "New problem"}
+                </span>
               </div>
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+              <h2 className="text-2xl font-semibold tracking-tight text-zinc-950 dark:text-zinc-50">
                 {problem.title}
               </h2>
               <div className="mt-4 flex flex-wrap gap-1.5">
                 {problem.tags.map((tag) => (
                   <span
                     key={tag}
-                    className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 font-mono text-[9px] font-bold uppercase text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900"
+                    className="rounded-md border border-zinc-200 bg-white px-2 py-1 font-mono text-[9px] font-bold uppercase text-zinc-500 shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
                   >
                     {tag}
                   </span>
@@ -249,54 +319,59 @@ export function ProblemDescriptionPanel({
               </div>
             </div>
 
-            <Section title="Prompt">
+            <Section title="Prompt" icon={FileCode2}>
               <TextBlock value={problem.description} />
             </Section>
 
             <div className="grid gap-5 sm:grid-cols-2">
-              <Section title="Input Format">
-                <TextBlock value={problem.input} />
+              <Section title="Input Format" icon={FileInput} framed>
+                <TextBlock value={problem.input} compact />
               </Section>
-              <Section title="Output Format">
-                <TextBlock value={problem.output} />
+              <Section title="Output Format" icon={FileOutput} framed>
+                <TextBlock value={problem.output} compact />
               </Section>
             </div>
 
             {problem.sampleTestCases.length > 0 && (
-              <Section title="Public Test Cases">
-                <div className="space-y-4">
+              <Section title="Public Test Cases" icon={Code}>
+                <div className="space-y-3">
                   {problem.sampleTestCases.map((testCase, index) => (
                     <div
                       key={testCase.id}
-                      className="overflow-hidden rounded-lg border border-zinc-200 dark:border-zinc-800"
+                      className="overflow-hidden rounded-lg border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-950"
                     >
-                      <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-2 font-mono text-[10px] font-bold uppercase text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50">
-                        Example {index + 1}
+                      <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-900/50">
+                        <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-600 dark:text-zinc-300">
+                          Example {index + 1}
+                        </span>
+                        <span className="rounded bg-zinc-200/70 px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase text-zinc-500 dark:bg-zinc-800">
+                          Public
+                        </span>
                       </div>
                       <div className="grid divide-y divide-zinc-200 dark:divide-zinc-800 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
-                        <div className="p-4">
-                          <p className="mb-2 font-mono text-[9px] font-bold uppercase text-zinc-400">
+                        <div className="p-3">
+                          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400">
                             Input
                           </p>
-                          <pre className="whitespace-pre-wrap font-mono text-xs leading-6 text-zinc-800 dark:text-zinc-200">
+                          <pre className="overflow-x-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs leading-6 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-200">
                             {testCase.input}
                           </pre>
                         </div>
-                        <div className="p-4">
-                          <p className="mb-2 font-mono text-[9px] font-bold uppercase text-zinc-400">
+                        <div className="p-3">
+                          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400">
                             Expected Output
                           </p>
-                          <pre className="whitespace-pre-wrap font-mono text-xs leading-6 text-zinc-800 dark:text-zinc-200">
+                          <pre className="overflow-x-auto rounded-md border border-zinc-200 bg-zinc-50 p-3 font-mono text-xs leading-6 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900/40 dark:text-zinc-200">
                             {testCase.expectedOutput}
                           </pre>
                         </div>
                       </div>
                       {testCase.explanation && (
-                        <div className="border-t border-zinc-200 bg-zinc-50/60 p-4 dark:border-zinc-800 dark:bg-zinc-900/20">
-                          <p className="mb-2 font-mono text-[9px] font-bold uppercase text-zinc-400">
+                        <div className="border-t border-zinc-200 bg-zinc-50/60 p-3 dark:border-zinc-800 dark:bg-zinc-900/20">
+                          <p className="mb-2 font-mono text-[9px] font-bold uppercase tracking-wider text-zinc-400">
                             Explanation
                           </p>
-                          <TextBlock value={testCase.explanation} />
+                          <TextBlock value={testCase.explanation} compact />
                         </div>
                       )}
                     </div>
@@ -305,12 +380,12 @@ export function ProblemDescriptionPanel({
               </Section>
             )}
 
-            <Section title="Explanation">
-              <TextBlock value={problem.explanation} />
+            <Section title="Explanation" icon={CheckCircle2}>
+              <TextBlock value={problem.explanation} compact />
             </Section>
 
-            <Section title="Constraints">
-              <TextBlock value={problem.constraints} />
+            <Section title="Constraints" icon={ShieldCheck} framed>
+              <TextBlock value={problem.constraints} compact />
             </Section>
           </div>
         )}

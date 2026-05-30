@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Flame, Trophy, Award, Zap, Code, ShieldCheck } from "lucide-react";
+import { Flame, Zap, Code, ShieldCheck, Calendar, Target } from "lucide-react";
 
 interface ProgressData {
   xp: number;
@@ -33,132 +33,134 @@ export function StreakStats({ data }: StreakStatsProps) {
   const mediumRatio = data.totalProblems.medium > 0 ? (data.solved.medium / data.totalProblems.medium) * 100 : 0;
   const hardRatio = data.totalProblems.hard > 0 ? (data.solved.hard / data.totalProblems.hard) * 100 : 0;
   const totalRatio = data.totalProblems.total > 0 ? (data.solved.total / data.totalProblems.total) * 100 : 0;
+  const tier = data.xp > 500 ? "Grandmaster" : data.xp > 200 ? "Expert" : "Beginner";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* 1. Core Gamification Summary */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-6 flex flex-col justify-between min-h-[180px] shadow-sm relative overflow-hidden transition-all duration-300">
-        <div className="absolute top-0 right-0 h-24 w-24 bg-orange-500/5 dark:bg-orange-500/10 rounded-full blur-2xl pointer-events-none" />
-        
-        <div className="flex justify-between items-start">
-          <div>
-            <span className="font-mono text-[9px] font-black text-orange-500 uppercase tracking-widest bg-orange-500/10 px-2 py-0.5 rounded">
-              Active Streak
-            </span>
-            <h3 className="text-2xl font-black font-sans tracking-tight text-zinc-900 dark:text-zinc-100 mt-2">
-              {data.streak.current} Day{data.streak.current !== 1 ? "s" : ""}
-            </h3>
+    <div className="flex flex-col gap-3">
+      {/* Row 1: 3 quick-stat pills */}
+      <div className="grid grid-cols-3 gap-3">
+        {/* Current Streak */}
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex flex-col items-center gap-1 text-center">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10 text-orange-500 mb-1">
+            <Flame className="h-4 w-4" />
           </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-500/10 text-orange-500 border border-orange-500/10">
-            <Flame className="h-5 w-5 fill-orange-500/20" />
-          </div>
+          <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+            {data.streak.current}
+          </span>
+          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 leading-tight">
+            Day Streak
+          </span>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-zinc-150 dark:border-zinc-900 flex justify-between text-xs font-mono">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold">Longest Streak</span>
-            <span className="text-zinc-700 dark:text-zinc-350 font-bold">{data.streak.longest} Day{data.streak.longest !== 1 ? "s" : ""}</span>
+        {/* Longest Streak */}
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex flex-col items-center gap-1 text-center">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 mb-1">
+            <Target className="h-4 w-4" />
           </div>
-          <div className="flex flex-col gap-0.5 items-end">
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold">Active Days</span>
-            <span className="text-zinc-700 dark:text-zinc-350 font-bold">{data.activeDays} Day{data.activeDays !== 1 ? "s" : ""}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Platform XP Metrics */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-6 flex flex-col justify-between min-h-[180px] shadow-sm relative overflow-hidden transition-all duration-300">
-        <div className="absolute top-0 right-0 h-24 w-24 bg-amber-500/5 dark:bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="flex justify-between items-start">
-          <div>
-            <span className="font-mono text-[9px] font-black text-amber-500 uppercase tracking-widest bg-amber-500/10 px-2 py-0.5 rounded">
-              Experience Level
-            </span>
-            <h3 className="text-2xl font-black font-sans tracking-tight text-zinc-900 dark:text-zinc-100 mt-2">
-              {data.xp} XP
-            </h3>
-          </div>
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/10">
-            <Zap className="h-5 w-5 fill-amber-500/20" />
-          </div>
+          <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+            {data.streak.longest}
+          </span>
+          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 leading-tight">
+            Best Streak
+          </span>
         </div>
 
-        <div className="mt-4 pt-4 border-t border-zinc-150 dark:border-zinc-900 flex justify-between text-xs font-mono">
-          <div className="flex flex-col gap-0.5">
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold">Coder Tier</span>
-            <span className="text-zinc-750 dark:text-zinc-350 font-bold flex items-center gap-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
-              <span>{data.xp > 500 ? "Grandmaster" : data.xp > 200 ? "Expert" : "Beginner"}</span>
-            </span>
+        {/* Active Days */}
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex flex-col items-center gap-1 text-center">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 mb-1">
+            <Calendar className="h-4 w-4" />
           </div>
-          <div className="flex flex-col gap-0.5 items-end">
-            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase font-bold">Solved Ratio</span>
-            <span className="text-zinc-700 dark:text-zinc-350 font-bold">{Math.round(totalRatio)}%</span>
-          </div>
+          <span className="text-xl font-black text-zinc-900 dark:text-zinc-50 leading-none">
+            {data.activeDays}
+          </span>
+          <span className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 leading-tight">
+            Active Days
+          </span>
         </div>
       </div>
 
-      {/* 3. DSA Target Breakdown */}
-      <div className="rounded-2xl border border-zinc-200 dark:border-zinc-900 bg-white dark:bg-zinc-950 p-6 flex flex-col justify-between min-h-[180px] shadow-sm relative overflow-hidden transition-all duration-300">
-        <div className="absolute top-0 right-0 h-24 w-24 bg-blue-500/5 dark:bg-blue-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="flex justify-between items-center mb-2">
-          <div>
-            <span className="font-mono text-[9px] font-black text-blue-500 uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded">
-              DSA Challenges
-            </span>
-            <h3 className="text-lg font-bold font-mono tracking-tight text-zinc-900 dark:text-zinc-100 mt-2">
-              {data.solved.total} / {data.totalProblems.total} Solved
-            </h3>
+      {/* Row 2: XP + Tier card */}
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500">
+            <Zap className="h-4 w-4" />
           </div>
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500 border border-blue-500/10">
-            <Code className="h-4.5 w-4.5" />
+          <div>
+            <p className="text-[10px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">Experience</p>
+            <p className="text-base font-black text-zinc-900 dark:text-zinc-50">{data.xp} XP</p>
           </div>
         </div>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20">
+          <ShieldCheck className="h-3.5 w-3.5 text-amber-500" />
+          <span className="text-xs font-bold text-amber-600 dark:text-amber-400">{tier}</span>
+        </div>
+      </div>
 
-        {/* Difficulty Bars */}
-        <div className="flex flex-col gap-2.5 mt-2">
-          {/* Easy */}
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase">
-              <span className="text-emerald-500">Easy</span>
-              <span className="text-zinc-400 dark:text-zinc-550">{data.solved.easy} / {data.totalProblems.easy}</span>
+      {/* Row 3: DSA Breakdown */}
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-violet-500/10 text-violet-500">
+              <Code className="h-3.5 w-3.5" />
             </div>
-            <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-              <div 
-                style={{ width: `${easyRatio}%` }} 
-                className="h-full bg-emerald-500 rounded-full transition-all duration-500" 
+            <span className="text-xs font-bold text-zinc-700 dark:text-zinc-300">Problems Solved</span>
+          </div>
+          <div className="text-right">
+            <span className="text-lg font-black text-zinc-900 dark:text-zinc-50">{data.solved.total}</span>
+            <span className="text-sm text-zinc-400 dark:text-zinc-500"> / {data.totalProblems.total}</span>
+          </div>
+        </div>
+
+        {/* Overall progress bar */}
+        <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden mb-4">
+          <div
+            style={{ width: `${totalRatio}%` }}
+            className="h-full bg-gradient-to-r from-violet-500 to-amber-500 rounded-full transition-all duration-700"
+          />
+        </div>
+
+        {/* Difficulty breakdown */}
+        <div className="flex flex-col gap-2.5">
+          {/* Easy */}
+          <div className="flex items-center gap-3">
+            <span className="w-12 text-[11px] font-bold text-emerald-500">Easy</span>
+            <div className="flex-1 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${easyRatio}%` }}
+                className="h-full bg-emerald-500 rounded-full transition-all duration-700"
               />
             </div>
+            <span className="w-12 text-right text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+              {data.solved.easy}/{data.totalProblems.easy}
+            </span>
           </div>
 
           {/* Medium */}
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase">
-              <span className="text-amber-500">Medium</span>
-              <span className="text-zinc-400 dark:text-zinc-550">{data.solved.medium} / {data.totalProblems.medium}</span>
-            </div>
-            <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-              <div 
-                style={{ width: `${mediumRatio}%` }} 
-                className="h-full bg-amber-500 rounded-full transition-all duration-500" 
+          <div className="flex items-center gap-3">
+            <span className="w-12 text-[11px] font-bold text-amber-500">Med</span>
+            <div className="flex-1 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${mediumRatio}%` }}
+                className="h-full bg-amber-500 rounded-full transition-all duration-700"
               />
             </div>
+            <span className="w-12 text-right text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+              {data.solved.medium}/{data.totalProblems.medium}
+            </span>
           </div>
 
           {/* Hard */}
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center text-[10px] font-mono font-bold uppercase">
-              <span className="text-red-500">Hard</span>
-              <span className="text-zinc-400 dark:text-zinc-550">{data.solved.hard} / {data.totalProblems.hard}</span>
-            </div>
-            <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden">
-              <div 
-                style={{ width: `${hardRatio}%` }} 
-                className="h-full bg-red-500 rounded-full transition-all duration-500" 
+          <div className="flex items-center gap-3">
+            <span className="w-12 text-[11px] font-bold text-red-500">Hard</span>
+            <div className="flex-1 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                style={{ width: `${hardRatio}%` }}
+                className="h-full bg-red-500 rounded-full transition-all duration-700"
               />
             </div>
+            <span className="w-12 text-right text-[11px] font-semibold text-zinc-400 dark:text-zinc-500">
+              {data.solved.hard}/{data.totalProblems.hard}
+            </span>
           </div>
         </div>
       </div>

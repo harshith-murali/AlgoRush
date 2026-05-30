@@ -24,7 +24,8 @@ interface ProblemTabsProps {
 
 export function ProblemTabs({ activeTab, onChange }: ProblemTabsProps) {
   return (
-    <div className="flex min-h-11 items-center gap-1 overflow-x-auto border-b border-zinc-200 bg-white px-2 dark:border-zinc-800 dark:bg-zinc-950">
+    <div className="border-b border-zinc-200 bg-zinc-50/80 px-3 py-2 dark:border-zinc-800 dark:bg-zinc-950">
+      <div className="flex gap-1 overflow-x-auto rounded-md border border-zinc-200 bg-white p-1 dark:border-zinc-800 dark:bg-zinc-900/40">
       {tabs.map((tab) => {
         const Icon = tab.icon;
         const active = activeTab === tab.value;
@@ -35,10 +36,10 @@ export function ProblemTabs({ activeTab, onChange }: ProblemTabsProps) {
             type="button"
             onClick={() => onChange(tab.value)}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-2 rounded-md px-3 font-mono text-[10px] font-bold uppercase transition-colors",
+              "inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded px-2.5 font-mono text-[10px] font-bold uppercase tracking-wider transition-colors",
               active
-                ? "bg-amber-500 text-zinc-950"
-                : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-zinc-950 text-white shadow-sm dark:bg-amber-500 dark:text-zinc-950"
+                : "text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             )}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -46,6 +47,7 @@ export function ProblemTabs({ activeTab, onChange }: ProblemTabsProps) {
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
