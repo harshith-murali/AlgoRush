@@ -4,7 +4,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { Difficulty, Language, UserRole } from "@/generated/prisma";
 
-import { LANGUAGE_TO_JUDGE0_ID } from "@/lib/judge0";
+import { LANGUAGE_TO_JUDGE0_ID, Judge0Status, JUDGE0_STATUS_DESCRIPTIONS } from "@/lib/judge0";
 
 // Configurable Judge0 Environment Constants
 const JUDGE0_BASE_URL = process.env.JUDGE0_BASE_URL || "https://judge0-ce.p.rapidapi.com";
@@ -107,6 +107,65 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 3.5. If no API key is provided and using a remote sandbox URL, bypass validation for developer ease
+    if (!JUDGE0_API_KEY && !JUDGE0_BASE_URL.includes("localhost") && !JUDGE0_BASE_URL.includes("127.0.0.1")) {
+      console.warn("⚠️ [DEV MODE] JUDGE0_API_KEY is not configured. Sandbox validation bypassed; persisting problem directly.");
+      
+      const newProgram = await prisma.$transaction(async (tx) => {
+        return await tx.program.create({
+          data: {
+            title: validatedData.title,
+            description: validatedData.description,
+            difficulty: validatedData.difficulty,
+            tags: validatedData.tags,
+            input: validatedData.input,
+            output: validatedData.output,
+            explanation: validatedData.explanation,
+            constraints: validatedData.constraints,
+            hints: validatedData.hints || null,
+            editorial: validatedData.editorial || null,
+            userId: dbUser.id,
+            testCases: {
+              create: validatedData.testCases.map((tc) => ({
+                input: tc.input,
+                expectedOutput: tc.expectedOutput,
+                isSample: tc.isSample,
+                isHidden: tc.isHidden,
+                explanation: tc.explanation || null,
+                order: tc.order,
+              })),
+            },
+            codeSnippets: {
+              create: validatedData.codeSnippets.map((cs) => ({
+                language: cs.language,
+                code: cs.code,
+              })),
+            },
+            solutions: {
+              create: Object.entries(validatedData.solutions).map(([langStr, code]) => ({
+                language: langStr.toUpperCase() as Language,
+                code,
+                explanation: "Official reference solution (persisted in dev mode without sandbox validation).",
+              })),
+            },
+          },
+          include: {
+            testCases: true,
+            codeSnippets: true,
+            solutions: true,
+          },
+        });
+      });
+
+      return NextResponse.json(
+        {
+          message: "Problem registered successfully [DEV MODE: Sandbox Validation Bypassed].",
+          programId: newProgram.id,
+        },
+        { status: 201 }
+      );
+    }
+
     // 4. Batch solution validation against Judge0 CE sandbox
     const submissionsToCreate = [];
     const submissionMapping: Array<{ language: Language; testCaseIndex: number }> = [];
@@ -193,7 +252,7 @@ export async function POST(request: NextRequest) {
         results = batchResults;
 
         const allFinished = batchResults.every(
-          (res) => res.status && res.status.id > 2 // Status > 2 means it is finished processing (e.g. 3 = Accepted)
+          (res) => res.status && res.status.id > Judge0Status.PROCESSING
         );
 
         if (allFinished) {
@@ -219,13 +278,12 @@ export async function POST(request: NextRequest) {
       const mapping = submissionMapping[i];
       const statusId = res.status?.id;
 
-      // Status 3 is 'Accepted' in Judge0 CE
-      if (statusId !== 3) {
+      if (statusId !== Judge0Status.ACCEPTED) {
         failures.push({
           language: mapping.language,
           testCaseIndex: mapping.testCaseIndex,
           testCaseInput: validatedData.testCases[mapping.testCaseIndex].input,
-          status: res.status?.description || "Execution Error",
+          status: (statusId ? JUDGE0_STATUS_DESCRIPTIONS[statusId] : null) || res.status?.description || "Execution Error",
           stdout: res.stdout || null,
           stderr: res.stderr || null,
           compile_output: res.compile_output || null,
