@@ -1,5 +1,9 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
 
+type RoleMetadata = {
+  role?: string
+}
+
 const isPublicRoute = createRouteMatcher([
   '/',
   '/sign-in(.*)',
@@ -25,7 +29,7 @@ export default clerkMiddleware(async (auth, req) => {
     }
 
     // Try to get role from session claims first (fastest)
-    let role = (session.sessionClaims?.metadata as any)?.role
+    let role = (session.sessionClaims?.metadata as RoleMetadata | undefined)?.role
 
     // Fallback: If not present in claims (e.g. session claims not configured in Clerk JWT template),
     // fetch directly from Clerk's backend API to check active publicMetadata
@@ -34,7 +38,7 @@ export default clerkMiddleware(async (auth, req) => {
         const { clerkClient } = await import("@clerk/nextjs/server");
         const client = await clerkClient();
         const user = await client.users.getUser(session.userId);
-        role = (user.publicMetadata as any)?.role;
+        role = (user.publicMetadata as RoleMetadata | undefined)?.role;
       } catch (err) {
         console.error("[MIDDLEWARE_AUTH_ERROR] Failed to fetch Clerk user metadata:", err);
       }

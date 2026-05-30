@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import type React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -23,7 +23,13 @@ function WorkspaceState({
 }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
-      <Icon className={title === "Loading workspace" ? "h-10 w-10 animate-spin text-amber-500" : "h-10 w-10 text-zinc-400"} />
+      <Icon
+        className={
+          title === "Loading workspace"
+            ? "h-10 w-10 animate-spin text-amber-500"
+            : "h-10 w-10 text-zinc-400"
+        }
+      />
       <div>
         <h1 className="text-xl font-bold text-zinc-950 dark:text-zinc-50">{title}</h1>
         <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">{body}</p>
@@ -40,10 +46,10 @@ export function ProblemWorkspace() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSolved, setIsSolved] = useState(false);
 
   useEffect(() => {
     if (!problemId) return;
-
     let cancelled = false;
 
     async function loadProblem() {
@@ -79,6 +85,34 @@ export function ProblemWorkspace() {
       cancelled = true;
     };
   }, [problemId]);
+
+  // Fetch initial solved status after problem loads
+  useEffect(() => {
+    if (!problemId) return;
+    let cancelled = false;
+
+    async function fetchSolvedStatus() {
+      try {
+        const res = await fetch(`/api/problems/${problemId}/solved-status`, {
+          cache: "no-store",
+        });
+        if (res.ok && !cancelled) {
+          const data = await res.json();
+          setIsSolved(!!data.solved);
+        }
+      } catch {}
+    }
+
+    fetchSolvedStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [problemId]);
+
+  // Called by the editor panel when a submission fully passes
+  const handleSolved = useCallback(() => {
+    setIsSolved(true);
+  }, []);
 
   if (!problemId || notFound) {
     return (
@@ -130,8 +164,12 @@ export function ProblemWorkspace() {
   return (
     <main className="relative left-1/2 -my-6 w-screen -translate-x-1/2 bg-zinc-100 p-3 dark:bg-zinc-950/60 lg:-my-8">
       <div className="grid gap-3 lg:grid-cols-[minmax(22rem,0.88fr)_minmax(34rem,1.45fr)]">
-        <ProblemDescriptionPanel problem={problem} />
-        <ProblemEditorPanel key={problem.id} problem={problem} />
+        <ProblemDescriptionPanel
+          problem={problem}
+          isSolved={isSolved}
+          onSolvedChange={handleSolved}
+        />
+        <ProblemEditorPanel key={problem.id} problem={problem} onSolved={handleSolved} />
       </div>
     </main>
   );
