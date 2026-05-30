@@ -5,7 +5,7 @@ import { BarChart4, Cpu, CheckCircle2, XCircle } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Analytics - Algo-Rush Control Shell",
+  title: "Analytics",
 };
 
 export default async function AnalyticsPage() {

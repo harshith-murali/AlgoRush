@@ -3,8 +3,8 @@ import { CreateProblemForm } from "@/components/admin/create-problem-form";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Create Problem - Algo-Rush Control Shell",
-  description: "Register and validate new practice problems for candidates.",
+  title: "Create Problem",
+  description: "Register and validate new practice problems.",
 };
 
 export default function CreateProblemPage() {

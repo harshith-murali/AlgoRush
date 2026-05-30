@@ -5,7 +5,7 @@ import { Users, Shield, Award, Calendar } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Users Control - Algo-Rush Control Shell",
+  title: "Users",
 };
 
 export default async function UsersControlPage() {

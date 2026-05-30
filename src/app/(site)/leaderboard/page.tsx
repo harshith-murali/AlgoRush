@@ -2,8 +2,8 @@ import React from "react";
 import { Users, Clock } from "lucide-react";
 
 export const metadata = {
-  title: "Leaderboard — AlgoRush",
-  description: "View global rankings and top performers on AlgoRush.",
+  title: "Leaderboard",
+  description: "View global rankings and top performers.",
 };
 
 export default function LeaderboardPage() {

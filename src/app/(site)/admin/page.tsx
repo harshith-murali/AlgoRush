@@ -6,7 +6,7 @@ import { ShieldCheck, Users, Code, Cpu, Award, Settings, ArrowRight } from "luci
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Admin Dashboard - Algo-Rush Control Shell",
+  title: "Admin Console",
 };
 
 export default async function AdminDashboardPage() {

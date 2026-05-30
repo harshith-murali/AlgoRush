@@ -2,8 +2,8 @@ import React from "react";
 import { Trophy, Clock } from "lucide-react";
 
 export const metadata = {
-  title: "Contests — AlgoRush",
-  description: "Participate in competitive programming contests on AlgoRush.",
+  title: "Contests",
+  description: "Participate in timed competitive programming contests.",
 };
 
 export default function ContestsPage() {

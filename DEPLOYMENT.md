@@ -37,6 +37,7 @@ In **Vercel → Project → Settings → Environment Variables**, add:
 | Variable | Required | Notes |
 |----------|----------|--------|
 | `DATABASE_URL` | Yes | Neon pooled connection string (`?sslmode=require`) |
+| `NEXT_PUBLIC_APP_URL` | Yes (prod) | `https://algo-rush-platform.vercel.app` — metadata, Open Graph, canonical URLs |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Yes | From Clerk dashboard |
 | `CLERK_SECRET_KEY` | Yes | From Clerk dashboard |
 | `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Yes | `/sign-in` |
@@ -51,11 +52,11 @@ Apply to **Production**, **Preview**, and **Development** as needed.
 
 ## 4. Configure Clerk for production
 
-After the first deploy, note your Vercel URL (e.g. `https://algo-rush.vercel.app`).
+Production URL: **https://algo-rush-platform.vercel.app**
 
 In [Clerk Dashboard](https://dashboard.clerk.com) → your app → **Domains**:
 
-- Add your Vercel production domain
+- Add `algo-rush-platform.vercel.app`
 - Add `*.vercel.app` for preview deployments if you use PR previews
 
 Under **Paths**, ensure sign-in/sign-up URLs match:

@@ -2,8 +2,8 @@ import React from "react";
 import { BookOpen, Clock } from "lucide-react";
 
 export const metadata = {
-  title: "Discuss — AlgoRush",
-  description: "Discuss coding techniques, patterns, and problem approaches on AlgoRush.",
+  title: "Discuss",
+  description: "Discuss coding techniques, patterns, and problem approaches.",
 };
 
 export default function DiscussPage() {

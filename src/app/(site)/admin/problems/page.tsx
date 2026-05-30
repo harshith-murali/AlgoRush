@@ -7,7 +7,8 @@ import { ProblemsTable } from "@/components/admin/problems-table";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "Manage Problems — Algo-Rush Control Shell",
+  title: "Manage Problems",
+  description: "Admin problem registry for AlgoRush.",
 };
 
 export default async function ManageProblemsPage() {

@@ -2,8 +2,8 @@ import { ProblemsListClient } from "@/components/problems/problems-list-client";
 import { Terminal } from "lucide-react";
 
 export const metadata = {
-  title: "Problems — AlgoRush",
-  description: "Browse coding interview problems on AlgoRush.",
+  title: "Problems",
+  description: "Browse curated coding interview problems and open the workspace.",
 };
 
 export default function ProblemsPage() {
