@@ -1,68 +1,171 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import React, { useEffect, useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { z } from "zod";
 import { Difficulty, Language } from "@/generated/prisma";
-import { BasicInfoSection } from "./problem-sections/basic-info-section";
-import { ProblemStatementSection } from "./problem-sections/problem-statement-section";
-import { TestCasesSection } from "./problem-sections/test-cases-section";
-import { CodeSnippetsSection } from "./problem-sections/code-snippets-section";
-import { SolutionsSection } from "./problem-sections/solutions-section";
-import { PublishSidebar } from "./problem-sections/publish-sidebar";
-import { cppTwoSumSampleData, cppReverseStringSampleData, emptyDefaultValues } from "@/lib/problem-sample-data";
-import { Cpu, FileSpreadsheet, Trash2, AlignCenter } from "lucide-react";
+import { SAMPLE_PROBLEMS, emptyDefaultValues } from "@/lib/problem-sample-data";
 
-// Form validation schema strictly mapping to backend API requirements
-export const createProblemFormSchema = z.object({
-  title: z.string().min(1, "Title is required"),
-  description: z.string().min(1, "Description is required"),
+import {
+  BasicInfoSection,
+  ProblemStatementSection,
+  TestCasesSection,
+  CodeSnippetsSection,
+  SolutionsSection,
+  PublishSidebar,
+} from "./problem-sections";
+
+import { Terminal, Cpu, Trash2, Sparkles, ChevronDown, CheckCircle2, Loader2, Circle } from "lucide-react";
+
+// ─── Form validation schema ──────────────────────────────────────────────────
+const createProblemFormSchema = z.object({
+  title: z.string().min(2, "Title must be at least 2 characters."),
   difficulty: z.nativeEnum(Difficulty),
-  tags: z.array(z.string().min(1, "Tag cannot be empty")).min(1, "At least one tag is required"),
-  input: z.string().min(1, "Input specification is required"),
-  output: z.string().min(1, "Output specification is required"),
-  explanation: z.string().min(1, "Explanation is required"),
-  constraints: z.string().min(1, "Constraints specification is required"),
-  hints: z.string().optional().nullable(),
-  editorial: z.string().optional().nullable(),
+  tags: z.array(z.string()).min(1, "At least one index tag is required."),
+  description: z.string().min(10, "Problem description must be descriptive."),
+  input: z.string().min(5, "Input specifications are required."),
+  output: z.string().min(5, "Output specifications are required."),
+  explanation: z.string().min(5, "A sample validation explanation is required."),
+  constraints: z.string().min(5, "Constraints are required."),
+  hints: z.string().optional(),
+  editorial: z.string().optional(),
   testCases: z
     .array(
       z.object({
-        input: z.string(),
-        expectedOutput: z.string(),
+        input: z.string().min(1, "Input stdin is required."),
+        expectedOutput: z.string().min(1, "Expected stdout is required."),
         isSample: z.boolean(),
         isHidden: z.boolean(),
-        explanation: z.string().optional().nullable(),
-        order: z.number(),
+        explanation: z.string().optional(),
+        order: z.number().int(),
       })
     )
-    .min(1, "At least one test case is required"),
+    .min(1, "At least one testcase assertion is required."),
   codeSnippets: z
     .array(
       z.object({
         language: z.nativeEnum(Language),
-        code: z.string().min(1, "Snippet template code is required"),
+        code: z.string().min(5, "Code boilerplate template is required."),
       })
     )
-    .min(1, "At least one starter code template is required"),
+    .min(1, "At least one starter boilerplate code snippet is required."),
   solutions: z
     .array(
       z.object({
         language: z.nativeEnum(Language),
-        code: z.string().min(1, "Solution code is required"),
+        code: z.string().min(5, "Reference solution code is required."),
       })
     )
-    .min(1, "At least one reference solution is required"),
+    .min(1, "At least one reference solution is required."),
 });
 
 export type CreateProblemFormValues = z.infer<typeof createProblemFormSchema>;
 
-// Export the outer wrapper which manages the component key state
+// ─── Step definitions for the loading screen ─────────────────────────────────
+type StepStatus = "pending" | "active" | "done";
+interface LoadingStep {
+  id: string;
+  label: string;
+  status: StepStatus;
+}
+
+const INITIAL_STEPS: LoadingStep[] = [
+  { id: "connect", label: "Connecting to execution engine", status: "pending" },
+  { id: "validate", label: "Running Judge0 batch validation", status: "pending" },
+  { id: "persist", label: "Persisting to database", status: "pending" },
+];
+
+// ─── Full-screen loading overlay component ───────────────────────────────────
+function SandboxLoadingScreen({ steps }: { steps: LoadingStep[] }) {
+  const [progress, setProgress] = useState(0);
+
+  // Animate the progress bar based on completed steps
+  useEffect(() => {
+    const done = steps.filter((s) => s.status === "done").length;
+    const active = steps.some((s) => s.status === "active") ? 0.5 : 0;
+    const total = steps.length;
+    const target = Math.round(((done + active) / total) * 90); // cap at 90% until fully done
+    setProgress(target);
+  }, [steps]);
+
+  return (
+    <div className="fixed inset-0 z-[9999] bg-zinc-950/98 backdrop-blur-md flex items-center justify-center">
+      {/* Ambient glows */}
+      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full bg-amber-500/[0.06] blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full bg-orange-600/[0.04] blur-[100px] pointer-events-none" />
+
+      <div className="relative flex flex-col items-center gap-8 max-w-sm w-full px-6 text-center">
+        {/* Icon */}
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-amber-500/20 blur-xl animate-pulse" />
+          <div className="relative w-16 h-16 rounded-2xl bg-zinc-900 border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.2)] flex items-center justify-center">
+            <Cpu className="h-8 w-8 text-amber-400 animate-spin" style={{ animationDuration: "3s" }} />
+          </div>
+        </div>
+
+        {/* Title */}
+        <div className="flex flex-col gap-1.5">
+          <h2 className="font-mono text-sm font-black uppercase tracking-[0.2em] text-white">
+            Deploying to Sandbox
+          </h2>
+          <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
+            Running Judge0 validation suite
+          </p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full h-[3px] bg-zinc-800 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-gradient-to-r from-amber-500 to-orange-400 rounded-full transition-all duration-700 ease-out shadow-[0_0_8px_rgba(245,158,11,0.6)]"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+
+        {/* Steps */}
+        <div className="w-full flex flex-col gap-3">
+          {steps.map((step) => (
+            <div key={step.id} className="flex items-center gap-3 text-left">
+              <div className="flex-shrink-0 w-4 h-4 flex items-center justify-center">
+                {step.status === "done" && (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                )}
+                {step.status === "active" && (
+                  <Loader2 className="w-4 h-4 text-amber-400 animate-spin" />
+                )}
+                {step.status === "pending" && (
+                  <Circle className="w-4 h-4 text-zinc-700" />
+                )}
+              </div>
+              <span
+                className={`font-mono text-[10px] uppercase tracking-wider transition-colors duration-300 ${
+                  step.status === "done"
+                    ? "text-emerald-400"
+                    : step.status === "active"
+                    ? "text-amber-400"
+                    : "text-zinc-600"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer hint */}
+        <p className="font-mono text-[9px] text-zinc-600 uppercase tracking-wider">
+          This may take up to 15 seconds
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Outer wrapper (manages key for form reset) ───────────────────────────────
 export function CreateProblemForm() {
-  const [activeKey, setActiveKey] = useState("twosum");
+  const [activeKey, setActiveKey] = useState("binary-search");
 
   return (
     <CreateProblemFormContent
@@ -73,7 +176,7 @@ export function CreateProblemForm() {
   );
 }
 
-// Subcomponent containing all React Hook Form setups
+// ─── Main form component ──────────────────────────────────────────────────────
 function CreateProblemFormContent({
   activeKey,
   setActiveKey,
@@ -83,14 +186,14 @@ function CreateProblemFormContent({
 }) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
-  const [loadingStep, setLoadingStep] = useState<string | null>(null);
+  const [loadingSteps, setLoadingSteps] = useState<LoadingStep[]>(INITIAL_STEPS);
   const [validationErrors, setValidationErrors] = useState<any>(null);
-  const [successData, setSuccessData] = useState<any>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Determine initial dataset based on the parent activeKey
-  let initialValues = cppTwoSumSampleData;
-  if (activeKey === "reversestring") {
-    initialValues = cppReverseStringSampleData;
+  // Determine initial dataset based on parent activeKey
+  let initialValues = SAMPLE_PROBLEMS["binary-search"];
+  if (SAMPLE_PROBLEMS[activeKey]) {
+    initialValues = SAMPLE_PROBLEMS[activeKey];
   } else if (activeKey.startsWith("empty")) {
     initialValues = emptyDefaultValues;
   }
@@ -100,15 +203,13 @@ function CreateProblemFormContent({
     defaultValues: initialValues,
   });
 
-  const loadTwoSumData = () => {
-    setActiveKey("twosum");
-    toast.success("Two Sum (C++) Preloaded!");
+  const setStep = (id: string, status: StepStatus) => {
+    setLoadingSteps((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, status } : s))
+    );
   };
 
-  const loadReverseStringData = () => {
-    setActiveKey("reversestring");
-    toast.success("Reverse String (C++) Preloaded!");
-  };
+  const resetSteps = () => setLoadingSteps(INITIAL_STEPS.map((s) => ({ ...s, status: "pending" as StepStatus })));
 
   const clearForm = () => {
     setActiveKey("empty-" + Date.now());
@@ -118,146 +219,146 @@ function CreateProblemFormContent({
   const onSubmit = async (values: CreateProblemFormValues) => {
     setIsPending(true);
     setValidationErrors(null);
-    setSuccessData(null);
-    setLoadingStep("Connecting to Edge Sandbox...");
+    resetSteps();
 
     try {
-      // 1. Transform Solutions array structure into Record format
+      // Step 1 — connect
+      setStep("connect", "active");
       const solutionsRecord: Record<string, string> = {};
       values.solutions.forEach((sol) => {
         solutionsRecord[sol.language] = sol.code;
       });
+      const payload = { ...values, solutions: solutionsRecord };
+      setStep("connect", "done");
 
-      const payload = {
-        ...values,
-        solutions: solutionsRecord,
-      };
-
-      setLoadingStep("Running Judge0 batch verification checks...");
-
+      // Step 2 — validate via Judge0
+      setStep("validate", "active");
       const response = await fetch("/api/create-problem", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        setStep("validate", "pending");
         setValidationErrors(data);
-        toast.error("Sandbox Validation Rejected");
+        toast.error("Sandbox validation rejected — check the errors below.");
         return;
       }
 
-      setSuccessData(data);
-      toast.success("Problem Created Successfully!");
+      setStep("validate", "done");
 
-      // Reset to empty on success
-      setActiveKey("empty-" + Date.now());
+      // Step 3 — persist (already done by the API, animate for UX)
+      setStep("persist", "active");
+      await new Promise((r) => setTimeout(r, 400));
+      setStep("persist", "done");
 
-      // Delayed routing to Manage Problems list
-      setTimeout(() => {
-        router.push("/admin/problems");
-      }, 3000);
+      toast.success(`Problem #${data.programId} created successfully!`);
+
+      // Immediate redirect — no delay
+      router.push("/admin/problems");
     } catch (err) {
       console.error("Submit error:", err);
       toast.error("An internal error occurred during submission.");
       setValidationErrors({ error: "Failed to connect to API server." });
+      resetSteps();
     } finally {
       setIsPending(false);
-      setLoadingStep(null);
     }
   };
 
+  const activeSampleName = SAMPLE_PROBLEMS[activeKey]?.title;
+
   return (
     <FormProvider {...methods}>
+      {/* ── Full-screen sandbox loading overlay ── */}
+      {isPending && <SandboxLoadingScreen steps={loadingSteps} />}
+
       <form
         onSubmit={methods.handleSubmit(onSubmit)}
-        className="flex flex-col lg:flex-row gap-6 relative"
+        className="flex flex-col lg:flex-row gap-6 relative min-h-[1000px]"
       >
-        {/* Form Loading Mask Overlay */}
-        {isPending && (
-          <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/70 z-50 rounded-lg flex flex-col items-center justify-center min-h-[400px]">
-            <div className="flex flex-col items-center gap-3 p-6 bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-lg shadow-xl max-w-sm text-center">
-              <Cpu className="h-8 w-8 text-amber-500 animate-spin" />
-              <h3 className="font-mono text-xs font-bold uppercase tracking-tight text-zinc-900 dark:text-zinc-100">
-                EDGE EXECUTION ENGINE ACTIVE
-              </h3>
-              <p className="font-mono text-[10px] text-zinc-500 dark:text-zinc-400">
-                {loadingStep || "Initializing security assertions..."}
-              </p>
-            </div>
-          </div>
-        )}
+        {/* Glowing cyber ambient background */}
+        <div className="absolute top-20 left-10 w-96 h-96 rounded-full bg-amber-500/[0.03] dark:bg-amber-500/[0.02] blur-[100px] pointer-events-none select-none" />
+        <div className="absolute bottom-40 right-10 w-[500px] h-[500px] rounded-full bg-orange-600/[0.03] dark:bg-orange-600/[0.015] blur-[140px] pointer-events-none select-none" />
 
-        {/* Left Column - Main form content */}
-        <div className="flex-1 flex flex-col gap-6 lg:max-w-[72%]">
-          {/* Success summary redirecting panel */}
-          {successData && (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-lg font-mono text-[11px] uppercase tracking-wide flex flex-col gap-2">
-              <div className="flex items-center gap-2 font-bold text-xs">
-                <span>[SUCCESS]</span>
-                <span>REGISTRY TRANSACTIONS COMPLETE</span>
-              </div>
-              <p>Problem registered successfully with program ID: {successData.programId}</p>
-              <p className="text-[9px] text-emerald-500/70">REDIRECTING TO MANAGEMENT DASHBOARD IN 3 SECONDS...</p>
-            </div>
-          )}
-
+        {/* Left column */}
+        <div className="flex-1 flex flex-col gap-6 lg:max-w-[72%] relative z-10">
           {/* SYSTEM PRELOAD ACTIONS ROW */}
-          <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-lg p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-[#fcfcfd]/80 dark:bg-[#0c0c0e]/95 border border-zinc-200/80 dark:border-zinc-900 border-l-4 border-l-amber-500 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] dark:shadow-none backdrop-blur-md rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex flex-col gap-0.5">
-              <span className="font-mono text-[10px] font-bold text-zinc-800 dark:text-zinc-200 uppercase tracking-widest flex items-center gap-1.5">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-550 animate-pulse" />
+              <span className="font-mono text-[10px] font-bold text-zinc-800 dark:text-zinc-100 uppercase tracking-widest flex items-center gap-1.5">
+                <Terminal className="h-3.5 w-3.5 text-amber-500" />
                 // SYSTEM_PRELOAD_ACTIONS
               </span>
-              <span className="font-mono text-[8px] text-zinc-450 dark:text-zinc-500 uppercase tracking-wider">
+              <span className="font-mono text-[8.5px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                 Load fully-formed practice problems to verify sandbox validation pipelines
               </span>
             </div>
 
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <button
-                type="button"
-                onClick={loadTwoSumData}
-                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight px-3 py-1.5 rounded border cursor-pointer select-none transition-colors ${
-                  activeKey === "twosum"
-                    ? "bg-amber-500 text-white border-amber-500"
-                    : "bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-150 dark:hover:bg-zinc-850 text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                }`}
-                title="Populate complete C++ Two Sum problem"
-              >
-                <FileSpreadsheet className="h-3.5 w-3.5" />
-                <span>Two Sum (CPP)</span>
-              </button>
-              <button
-                type="button"
-                onClick={loadReverseStringData}
-                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight px-3 py-1.5 rounded border cursor-pointer select-none transition-colors ${
-                  activeKey === "reversestring"
-                    ? "bg-amber-500 text-white border-amber-500"
-                    : "bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-150 dark:hover:bg-zinc-850 text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
-                }`}
-                title="Populate complete C++ Reverse String problem"
-              >
-                <AlignCenter className="h-3.5 w-3.5" />
-                <span>Reverse String (CPP)</span>
-              </button>
-              <button
-                type="button"
-                onClick={clearForm}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight bg-red-50 dark:bg-red-950/15 hover:bg-red-100 dark:hover:bg-red-950/25 text-red-550 dark:text-red-400 border border-red-500/20 px-3 py-1.5 rounded cursor-pointer select-none transition-colors"
-                title="Empty all input segments"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Clear Form</span>
-              </button>
+            <div className="flex items-center gap-2 w-full sm:w-auto relative">
+              {/* Load Sample Dropdown */}
+              <div className="relative w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 font-mono text-[9.5px] font-black uppercase tracking-tight bg-zinc-50 dark:bg-zinc-950 hover:bg-zinc-100 dark:hover:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200 px-4 py-2 rounded-lg cursor-pointer select-none transition-all duration-200 shadow-sm"
+                >
+                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                  <span>{activeSampleName ? `Sample: ${activeSampleName}` : "Load Sample Problem"}</span>
+                  <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${dropdownOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {dropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40 cursor-default" onClick={() => setDropdownOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-60 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md shadow-2xl py-2 z-50 flex flex-col font-mono text-[9px] text-zinc-500 dark:text-zinc-400 select-none animate-in fade-in-50 slide-in-from-top-1 duration-150">
+                      <span className="px-3.5 py-1.5 font-bold uppercase text-[7.5px] tracking-widest text-zinc-400 border-b border-zinc-100 dark:border-zinc-900 mb-1 select-none">
+                        Select Practice Challenge
+                      </span>
+                      {Object.entries(SAMPLE_PROBLEMS).map(([key, value]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => {
+                            setActiveKey(key);
+                            setDropdownOpen(false);
+                            toast.success(`${value.title} sample preloaded!`);
+                          }}
+                          className={`w-full text-left px-3.5 py-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900/60 transition-colors duration-150 flex items-center justify-between cursor-pointer ${
+                            activeKey === key ? "text-amber-500 font-bold bg-amber-500/[0.03]" : ""
+                          }`}
+                        >
+                          <span>{value.title}</span>
+                          <span className={`text-[7px] px-1.5 py-0.5 border rounded-md uppercase font-bold tracking-tighter ${
+                            value.difficulty === Difficulty.EASY
+                              ? "text-emerald-500 border-emerald-500/25 bg-emerald-500/5"
+                              : "text-amber-500 border-amber-500/25 bg-amber-500/5"
+                          }`}>
+                            {value.difficulty}
+                          </span>
+                        </button>
+                      ))}
+
+                      <div className="border-t border-zinc-100 dark:border-zinc-900 my-1" />
+                      <button
+                        type="button"
+                        onClick={() => { clearForm(); setDropdownOpen(false); }}
+                        className="w-full text-left px-3.5 py-2 text-red-500 hover:bg-red-500/5 hover:text-red-600 transition-colors duration-150 flex items-center gap-2 cursor-pointer font-bold"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Clear Form</span>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Form Sections */}
+          {/* Form sections */}
           <BasicInfoSection disabled={isPending} />
           <ProblemStatementSection disabled={isPending} />
           <TestCasesSection disabled={isPending} />
@@ -265,13 +366,13 @@ function CreateProblemFormContent({
           <SolutionsSection disabled={isPending} />
         </div>
 
-        {/* Right Column - Sticky Sidebar operations controls */}
-        <div className="w-full lg:w-[28%] flex flex-col gap-6">
-          <div className="sticky top-6">
+        {/* Right column — sticky sidebar */}
+        <div className="w-full lg:w-[28%] flex flex-col gap-6 relative z-10">
+          <div className="sticky top-20">
             <PublishSidebar
               isPending={isPending}
               validationErrors={validationErrors}
-              success={!!successData}
+              success={false}
             />
           </div>
         </div>

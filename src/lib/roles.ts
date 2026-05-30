@@ -1,5 +1,5 @@
 import { currentUser } from "@clerk/nextjs/server";
-import { currentUserRole } from "@modules/auth/actions";
+import { getCurrentUserRoleFromDatabase } from "@/lib/auth/user-sync";
 
 export type UserRole = "user" | "admin";
 
@@ -15,7 +15,7 @@ export interface ClerkUserMetadata {
 export async function getClerkUserRole(): Promise<UserRole> {
   try {
     // 1. Check PostgreSQL Database Role
-    const dbRole = await currentUserRole();
+    const dbRole = await getCurrentUserRoleFromDatabase();
 
     // 2. Retrieve Clerk User
     const user = await currentUser();

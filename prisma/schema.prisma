@@ -37,9 +37,6 @@ enum Language {
   PYTHON
   JAVA
   JAVASCRIPT
-  TYPESCRIPT
-  GO
-  RUST
 }
 
 model User {

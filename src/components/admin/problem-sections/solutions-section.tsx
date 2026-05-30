@@ -4,17 +4,39 @@ import React from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { CreateProblemFormValues } from "../create-problem-form";
 import { Language } from "@/generated/prisma";
+import { SUPPORTED_LANGUAGES } from "@/lib/problem-language-templates";
+import { getSampleTemplate } from "@/lib/problem-sample-data";
 import { CheckSquare, Plus, Trash } from "lucide-react";
+import Editor from "@monaco-editor/react";
+import { useMonacoTheme } from "@/hooks/use-monaco-theme";
 
 interface SectionProps {
   disabled?: boolean;
 }
 
+const mapLanguageToMonaco = (lang: Language): string => {
+  switch (lang) {
+    case Language.CPP:
+      return "cpp";
+    case Language.JAVASCRIPT:
+      return "javascript";
+    case Language.PYTHON:
+      return "python";
+    case Language.JAVA:
+      return "java";
+    default:
+      return "plaintext";
+  }
+};
+
 export function SolutionsSection({ disabled }: SectionProps) {
+  const monacoTheme = useMonacoTheme();
+  const isLight = monacoTheme === "vs-light";
   const {
     control,
     register,
     watch,
+    setValue,
     formState: { errors },
   } = useFormContext<CreateProblemFormValues>();
 
@@ -24,6 +46,7 @@ export function SolutionsSection({ disabled }: SectionProps) {
   });
 
   const activeSolutions = watch("solutions") || [];
+  const title = watch("title") || "";
 
   // Filter languages to avoid duplicates
   const getAvailableLanguages = (currentIndex: number) => {
@@ -31,7 +54,7 @@ export function SolutionsSection({ disabled }: SectionProps) {
       .map((s, idx) => (idx !== currentIndex ? s.language : null))
       .filter(Boolean);
 
-    return Object.values(Language).filter((lang) => !selectedLanguages.includes(lang));
+    return SUPPORTED_LANGUAGES.filter((lang) => !selectedLanguages.includes(lang));
   };
 
   const addSolution = () => {
@@ -39,33 +62,33 @@ export function SolutionsSection({ disabled }: SectionProps) {
     if (available.length > 0) {
       append({
         language: available[0],
-        code: `// Reference solution in ${available[0]}`,
+        code: getSampleTemplate(title, available[0], "solution"),
       });
     }
   };
 
   return (
-    <div className="bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-900 rounded-lg p-5">
-      <div className="flex items-center justify-between mb-4 border-b border-zinc-150 dark:border-zinc-900 pb-2">
+    <div className="bg-[#fcfcfd]/70 dark:bg-[#0c0c0e]/95 border border-zinc-200 dark:border-zinc-900 rounded-xl p-5 hover:border-zinc-800 transition-all duration-300 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] dark:shadow-none">
+      <div className="flex items-center justify-between mb-5 border-b border-zinc-150 dark:border-zinc-855 pb-3">
         <div className="flex items-center gap-2">
           <CheckSquare className="h-4 w-4 text-amber-500" />
-          <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
+          <h3 className="font-mono text-[11px] font-black uppercase tracking-widest text-zinc-800 dark:text-zinc-200">
             05 // Reference Solution Keys (Validated in Judge0)
           </h3>
         </div>
         <button
           type="button"
-          disabled={disabled || activeSolutions.length >= Object.keys(Language).length}
+          disabled={disabled || activeSolutions.length >= SUPPORTED_LANGUAGES.length}
           onClick={addSolution}
-          className="font-mono text-[10px] font-bold uppercase tracking-tight bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded flex items-center gap-1 cursor-pointer transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="font-mono text-[9px] font-black uppercase tracking-tight bg-amber-500 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-550/20 text-zinc-955 dark:text-amber-500 border border-amber-550 dark:border-amber-500/25 px-3 py-1.5 rounded-lg flex items-center gap-1 cursor-pointer transition-all duration-200 hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed select-none shadow-md shadow-amber-500/5 dark:shadow-none"
         >
-          <Plus className="h-3 w-3" /> Add Solution
+          <Plus className="h-3.5 w-3.5" /> Add Solution
         </button>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-5">
         {fields.length === 0 && (
-          <div className="text-center p-6 border border-dashed border-zinc-200 dark:border-zinc-850 rounded-lg font-mono text-[10px] text-zinc-400">
+          <div className="text-center py-8 border-2 border-dashed border-zinc-200 dark:border-zinc-900 rounded-xl font-mono text-[10px] text-zinc-450 dark:text-zinc-555 uppercase tracking-widest">
             NO SOLUTIONS REGISTERED. AT LEAST ONE REQUIRED.
           </div>
         )}
@@ -73,36 +96,45 @@ export function SolutionsSection({ disabled }: SectionProps) {
         {fields.map((field, idx) => {
           const solutionErrors = errors.solutions?.[idx];
           const availableLangs = getAvailableLanguages(idx);
+          const solutionCode = watch(`solutions.${idx}.code`) || "";
 
           return (
             <div
               key={field.id}
-              className="border border-zinc-200 dark:border-zinc-900 rounded-lg p-4 bg-zinc-50/50 dark:bg-zinc-950/20 flex flex-col gap-3"
+              className="border border-zinc-200/80 dark:border-zinc-900/80 rounded-xl p-4 bg-[#fcfcfd]/40 dark:bg-[#08080a] flex flex-col gap-3 relative hover:border-zinc-300 dark:hover:border-zinc-800 transition-all duration-200"
             >
               {/* Header Selector */}
-              <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-900/50 pb-2">
+              <div className="flex items-center justify-between border-b border-zinc-150 dark:border-zinc-900/60 pb-2">
                 <div className="flex items-center gap-3">
-                  <span className="font-mono text-[10px] font-bold uppercase text-zinc-500">
+                  <span className="font-mono text-[10px] font-black uppercase text-zinc-500 dark:text-zinc-400">
                     Solution Lang:
                   </span>
                   <select
                     disabled={disabled}
-                    {...register(`solutions.${idx}.language` as const)}
-                    className="font-mono text-[10px] font-bold uppercase tracking-tight px-2 py-1 bg-zinc-150/70 dark:bg-zinc-850 border border-zinc-250 dark:border-zinc-850 rounded-md focus:outline-none focus:border-amber-500"
+                    {...register(`solutions.${idx}.language` as const, {
+                      onChange: (e) => {
+                        const selectedLang = e.target.value as Language;
+                        setValue(`solutions.${idx}.code`, getSampleTemplate(title, selectedLang, "solution"));
+                      },
+                    })}
+                    className="font-mono text-[10px] font-bold uppercase tracking-tight px-2.5 py-1 bg-zinc-100 dark:bg-zinc-950 border border-zinc-250 dark:border-zinc-855 rounded-md focus:outline-none focus:border-amber-500 text-zinc-800 dark:text-zinc-200 cursor-pointer transition-colors duration-150"
                   >
                     <option value={field.language}>{field.language}</option>
-                    {availableLangs.map((lang) => (
+                    {availableLangs.filter((lang) => lang !== field.language).map((lang) => (
                       <option key={lang} value={lang}>
                         {lang}
                       </option>
                     ))}
                   </select>
+                  <span className="font-mono text-[8px] text-zinc-400 dark:text-zinc-650 uppercase">
+                    // Solution template updates on selection
+                  </span>
                 </div>
                 <button
                   type="button"
                   disabled={disabled}
                   onClick={() => remove(idx)}
-                  className="p-1 text-zinc-400 hover:text-red-500 rounded transition-colors cursor-pointer disabled:opacity-50"
+                  className="p-1 text-zinc-400 hover:text-red-500 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
                   title="Remove solution"
                 >
                   <Trash className="h-3.5 w-3.5" />
@@ -110,25 +142,37 @@ export function SolutionsSection({ disabled }: SectionProps) {
               </div>
 
               {/* Monospace Code Editor */}
-              <div className="flex flex-col gap-1">
-                <label className="font-mono text-[9px] font-bold uppercase tracking-wide text-zinc-500">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-mono text-[8.5px] font-black uppercase tracking-wider text-zinc-450 dark:text-zinc-550">
                   Full Functional Reference Code
                 </label>
-                <div className="relative border border-zinc-200 dark:border-zinc-800 rounded-md overflow-hidden bg-zinc-900 dark:bg-zinc-950">
-                  <div className="bg-zinc-950 px-4 py-1.5 border-b border-zinc-800/80 flex items-center font-mono text-[9px] text-zinc-500 tracking-tight select-none">
-                    SOLUTION_BODY_SHELL // SANDBOX_VALIDATED
+                <div className="relative border border-zinc-200 dark:border-[#141418] rounded-xl overflow-hidden shadow-inner">
+                  <div className={`${isLight ? "bg-zinc-100 border-zinc-200" : "bg-zinc-950 border-zinc-800/80"} px-4 py-2 border-b flex items-center justify-between font-mono text-[9px] text-zinc-550 tracking-tight select-none`}>
+                    <span>SOLUTION_BODY_SHELL // MONACO_ACTIVE</span>
+                    <span className="text-amber-500/80 font-bold uppercase">{field.language} MODE</span>
                   </div>
-                  <textarea
-                    disabled={disabled}
-                    rows={10}
-                    placeholder={`// Enter reference solution here...`}
-                    {...register(`solutions.${idx}.code` as const)}
-                    className="w-full font-mono text-xs p-4 bg-transparent text-zinc-100 dark:text-zinc-200 border-none outline-none focus:ring-0 resize-y block whitespace-pre"
-                    style={{ tabSize: 2 }}
+                  <Editor
+                    height="320px"
+                    language={mapLanguageToMonaco(field.language)}
+                    theme={monacoTheme}
+                    value={solutionCode}
+                    onChange={(val) => setValue(`solutions.${idx}.code`, val || "")}
+                    options={{
+                      minimap: { enabled: false },
+                      fontSize: 12,
+                      lineNumbers: "on",
+                      tabSize: 2,
+                      scrollBeyondLastLine: false,
+                      readOnly: disabled,
+                      padding: { top: 8, bottom: 8 },
+                      cursorBlinking: "smooth",
+                      fontFamily: "var(--font-geist-mono), monospace",
+                    }}
+                    className="w-full"
                   />
                 </div>
                 {solutionErrors?.code && (
-                  <span className="font-mono text-[9px] text-red-500 uppercase mt-1">
+                  <span className="font-mono text-[8px] text-red-500 uppercase mt-0.5 font-bold">
                     {solutionErrors.code.message}
                   </span>
                 )}

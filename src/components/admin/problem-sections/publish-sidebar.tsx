@@ -9,9 +9,10 @@ interface SidebarProps {
   isPending: boolean;
   validationErrors: any;
   success: boolean;
+  mode?: "create" | "edit";
 }
 
-export function PublishSidebar({ isPending, validationErrors, success }: SidebarProps) {
+export function PublishSidebar({ isPending, validationErrors, success, mode = "create" }: SidebarProps) {
   const { watch, formState: { errors } } = useFormContext<CreateProblemFormValues>();
 
   const title = watch("title");
@@ -125,7 +126,7 @@ export function PublishSidebar({ isPending, validationErrors, success }: Sidebar
             className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-mono text-xs font-black uppercase tracking-wider rounded-md transition-colors cursor-pointer flex items-center justify-center gap-2 select-none disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
           >
             <Play className="h-3.5 w-3.5 fill-current" />
-            <span>RUN VALIDATION & REGISTER</span>
+            <span>{mode === "edit" ? "SAVE CHANGES" : "RUN VALIDATION & REGISTER"}</span>
           </button>
         </div>
       </div>

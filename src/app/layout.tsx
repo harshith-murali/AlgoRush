@@ -4,8 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AppLayout } from "@/components/layout/app-layout";
-import { getClerkUserRole } from "@/lib/roles";
+import { ThemeToaster } from "@/components/theme-toaster";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -29,9 +28,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 1. Retrieve the user role from Clerk session publicMetadata on the server
-  const userRole = await getClerkUserRole();
-
   return (
     <html
       lang="en"
@@ -41,10 +37,8 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <ClerkProvider>
-            {/* 2. Pass userRole down as a prop to AppLayout */}
-            <AppLayout userRole={userRole}>
-              {children}
-            </AppLayout>
+            {children}
+            <ThemeToaster />
           </ClerkProvider>
         </ThemeProvider>
       </body>
