@@ -4,21 +4,13 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { Difficulty, Language, UserRole } from "@/generated/prisma";
 
+import { LANGUAGE_TO_JUDGE0_ID } from "@/lib/judge0";
+
 // Configurable Judge0 Environment Constants
 const JUDGE0_BASE_URL = process.env.JUDGE0_BASE_URL || "https://judge0-ce.p.rapidapi.com";
 const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY || "";
 const JUDGE0_HOST = process.env.JUDGE0_HOST || "";
 
-// Map the Language enum to Judge0 CE (Standard Edition) Language IDs
-const LANGUAGE_TO_JUDGE0_ID: Record<Language, number> = {
-  [Language.CPP]: 54,        // C++ (GCC 9.2.0)
-  [Language.PYTHON]: 71,     // Python (3.8.1)
-  [Language.JAVA]: 62,       // Java (OpenJDK 13.0.1)
-  [Language.JAVASCRIPT]: 63, // JavaScript (Node.js 12.14.0)
-  [Language.TYPESCRIPT]: 74, // TypeScript (3.7.4)
-  [Language.GO]: 60,         // Go (1.13.5)
-  [Language.RUST]: 73,       // Rust (1.40.0)
-};
 
 // Zod Input Validation Schema
 const createProblemSchema = z.object({
