@@ -13,8 +13,8 @@ import { TestCasesSection } from "./problem-sections/test-cases-section";
 import { CodeSnippetsSection } from "./problem-sections/code-snippets-section";
 import { SolutionsSection } from "./problem-sections/solutions-section";
 import { PublishSidebar } from "./problem-sections/publish-sidebar";
-import { cppSampleData, emptyDefaultValues } from "@/lib/problem-sample-data";
-import { Cpu, RotateCcw, FileSpreadsheet, Trash2 } from "lucide-react";
+import { cppTwoSumSampleData, cppReverseStringSampleData, emptyDefaultValues } from "@/lib/problem-sample-data";
+import { Cpu, FileSpreadsheet, Trash2, AlignCenter } from "lucide-react";
 
 // Form validation schema strictly mapping to backend API requirements
 export const createProblemFormSchema = z.object({
@@ -60,31 +60,58 @@ export const createProblemFormSchema = z.object({
 
 export type CreateProblemFormValues = z.infer<typeof createProblemFormSchema>;
 
+// Export the outer wrapper which manages the component key state
 export function CreateProblemForm() {
+  const [activeKey, setActiveKey] = useState("twosum");
+
+  return (
+    <CreateProblemFormContent
+      key={activeKey}
+      activeKey={activeKey}
+      setActiveKey={setActiveKey}
+    />
+  );
+}
+
+// Subcomponent containing all React Hook Form setups
+function CreateProblemFormContent({
+  activeKey,
+  setActiveKey,
+}: {
+  activeKey: string;
+  setActiveKey: (key: string) => void;
+}) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [loadingStep, setLoadingStep] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<any>(null);
   const [successData, setSuccessData] = useState<any>(null);
 
-  // Initialize with cppSampleData directly to populate the UI by default
+  // Determine initial dataset based on the parent activeKey
+  let initialValues = cppTwoSumSampleData;
+  if (activeKey === "reversestring") {
+    initialValues = cppReverseStringSampleData;
+  } else if (activeKey.startsWith("empty")) {
+    initialValues = emptyDefaultValues;
+  }
+
   const methods = useForm<CreateProblemFormValues>({
     resolver: zodResolver(createProblemFormSchema),
-    defaultValues: cppSampleData,
+    defaultValues: initialValues,
   });
 
-  const loadSampleData = () => {
-    methods.reset(cppSampleData);
-    toast.success("C++ Sample Data Preloaded!");
+  const loadTwoSumData = () => {
+    setActiveKey("twosum");
+    toast.success("Two Sum (C++) Preloaded!");
   };
 
-  const resetToSample = () => {
-    methods.reset(cppSampleData);
-    toast.success("Form Reset to C++ Sample!");
+  const loadReverseStringData = () => {
+    setActiveKey("reversestring");
+    toast.success("Reverse String (C++) Preloaded!");
   };
 
   const clearForm = () => {
-    methods.reset(emptyDefaultValues);
+    setActiveKey("empty-" + Date.now());
     toast.success("Form Cleared!");
   };
 
@@ -127,8 +154,8 @@ export function CreateProblemForm() {
       setSuccessData(data);
       toast.success("Problem Created Successfully!");
 
-      // Clean form on success
-      methods.reset(emptyDefaultValues);
+      // Reset to empty on success
+      setActiveKey("empty-" + Date.now());
 
       // Delayed routing to Manage Problems list
       setTimeout(() => {
@@ -194,21 +221,29 @@ export function CreateProblemForm() {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={loadSampleData}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight bg-amber-500 hover:bg-amber-600 dark:bg-amber-500/10 dark:hover:bg-amber-550/20 dark:text-amber-500 border border-amber-500/25 px-3 py-1.5 rounded text-white dark:text-amber-500 cursor-pointer select-none transition-colors"
+                onClick={loadTwoSumData}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight px-3 py-1.5 rounded border cursor-pointer select-none transition-colors ${
+                  activeKey === "twosum"
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-150 dark:hover:bg-zinc-850 text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
+                }`}
                 title="Populate complete C++ Two Sum problem"
               >
                 <FileSpreadsheet className="h-3.5 w-3.5" />
-                <span>Load Sample (CPP)</span>
+                <span>Two Sum (CPP)</span>
               </button>
               <button
                 type="button"
-                onClick={resetToSample}
-                className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-150 dark:hover:bg-zinc-800/80 text-zinc-650 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded cursor-pointer select-none transition-colors"
-                title="Reset current adjustments back to C++ sample"
+                onClick={loadReverseStringData}
+                className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 font-mono text-[9px] font-bold uppercase tracking-tight px-3 py-1.5 rounded border cursor-pointer select-none transition-colors ${
+                  activeKey === "reversestring"
+                    ? "bg-amber-500 text-white border-amber-500"
+                    : "bg-zinc-50 dark:bg-zinc-900/60 hover:bg-zinc-150 dark:hover:bg-zinc-850 text-zinc-650 dark:text-zinc-400 border-zinc-200 dark:border-zinc-800"
+                }`}
+                title="Populate complete C++ Reverse String problem"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset Form</span>
+                <AlignCenter className="h-3.5 w-3.5" />
+                <span>Reverse String (CPP)</span>
               </button>
               <button
                 type="button"

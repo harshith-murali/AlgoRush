@@ -1,6 +1,6 @@
 import { Difficulty, Language } from "@/generated/prisma";
 
-export const cppSampleData = {
+export const cppTwoSumSampleData = {
   title: "Two Sum",
   difficulty: Difficulty.EASY,
   tags: ["arrays", "hash-map", "search"],
@@ -132,6 +132,111 @@ export const cppSampleData = {
   ],
 };
 
+export const cppReverseStringSampleData = {
+  title: "Reverse String",
+  difficulty: Difficulty.EASY,
+  tags: ["strings", "two-pointers"],
+  description: [
+    "Write a function that reverses a string. The input string is given as an array of characters `s`.",
+    "",
+    "You must do this by modifying the input array in-place with O(1) extra memory."
+  ].join("\n"),
+  input: "A JSON-formatted list of characters on the first line (e.g. [\"h\",\"e\",\"l\",\"l\",\"o\"]).",
+  output: "The reversed list of characters (e.g. [\"o\",\"l\",\"l\",\"e\",\"h\"]).",
+  explanation: "The input array is modified in-place to swap elements from the edges moving inward.",
+  constraints: [
+    "1 <= s.length <= 10^5",
+    "s[i] is a printable ascii character."
+  ].join("\n"),
+  hints: "Use two pointers moving towards the center to swap elements in-place.",
+  editorial: [
+    "We can swap the first and last elements, then the second and second-to-last elements, and so on.",
+    "This two-pointer approach reverses the array in-place, achieving O(N) time complexity and O(1) auxiliary space complexity."
+  ].join("\n"),
+  testCases: [
+    {
+      input: "[\"h\",\"e\",\"l\",\"l\",\"o\"]",
+      expectedOutput: "[\"o\",\"l\",\"l\",\"e\",\"h\"]",
+      isSample: true,
+      isHidden: false,
+      explanation: "Reversing the characters in 'hello' gives 'olleh'.",
+      order: 0,
+    },
+    {
+      input: "[\"H\",\"a\",\"n\",\"n\",\"a\",\"h\"]",
+      expectedOutput: "[\"h\",\"a\",\"n\",\"n\",\"a\",\"H\"]",
+      isSample: true,
+      isHidden: false,
+      explanation: "Reversing 'Hannah' gives 'hannaH'.",
+      order: 1,
+    },
+  ],
+  codeSnippets: [
+    {
+      language: Language.CPP,
+      code: [
+        "#include <vector>",
+        "",
+        "class Solution {",
+        "public:",
+        "    void reverseString(std::vector<char>& s) {",
+        "        // Write your solution here",
+        "        ",
+        "    }",
+        "};"
+      ].join("\n"),
+    },
+  ],
+  solutions: [
+    {
+      language: Language.CPP,
+      code: [
+        "#include <iostream>",
+        "#include <vector>",
+        "#include <string>",
+        "#include <sstream>",
+        "#include <algorithm>",
+        "",
+        "class Solution {",
+        "public:",
+        "    void reverseString(std::vector<char>& s) {",
+        "        int left = 0;",
+        "        int right = s.size() - 1;",
+        "        while (left < right) {",
+        "            std::swap(s[left], s[right]);",
+        "            left++;",
+        "            right--;",
+        "        }",
+        "    }",
+        "};",
+        "",
+        "int main() {",
+        "    std::string line;",
+        "    if (std::getline(std::cin, line)) {",
+        "        // Standard parser to extract char elements from string like '[\"h\",\"e\",\"l\",\"l\",\"o\"]'",
+        "        std::vector<char> s;",
+        "        for (char c : line) {",
+        "            if (c == '[' || c == ']' || c == ',' || c == ' ' || c == '\"' || c == '\\'' || c == '\\r' || c == '\\n') continue;",
+        "            s.push_back(c);",
+        "        }",
+        "",
+        "        Solution solver;",
+        "        solver.reverseString(s);",
+        "",
+        "        std::cout << \"[\";",
+        "        for (size_t i = 0; i < s.size(); ++i) {",
+        "            std::cout << \"\\\"\" << s[i] << \"\\\"\";",
+        "            if (i < s.size() - 1) std::cout << \",\";",
+        "        }",
+        "        std::cout << \"]\" << std::endl;",
+        "    }",
+        "    return 0;",
+        "}"
+      ].join("\n"),
+    },
+  ],
+};
+
 export const emptyDefaultValues = {
   title: "",
   difficulty: Difficulty.EASY,
@@ -161,7 +266,7 @@ export const emptyDefaultValues = {
         "",
         "class Solution {",
         "public:",
-        "    std::vector<int> twoSum(std::vector<int>& nums, int target) {",
+        "    void reverseString(std::vector<char>& s) {",
         "        ",
         "    }",
         "};"
