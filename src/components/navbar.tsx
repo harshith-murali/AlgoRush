@@ -5,10 +5,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AlgoRushLogo } from "@/components/logo/algo-rush-logo";
 import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs";
-import { Terminal, Trophy, Users, BookOpen, ShieldAlert, Flame, Settings, BarChart4, FolderKanban } from "lucide-react";
+import { Terminal, Trophy, Users, BookOpen, ShieldAlert, Flame, Settings, BarChart4, FolderKanban, User } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 import { MobileNav } from "./mobile-nav";
 import { UserRole } from "@/lib/roles";
+import { ProfileProgressPanel } from "@/components/profile/profile-progress-panel";
+import { useState, useEffect } from "react";
 
 interface NavbarProps {
   userRole: UserRole;
@@ -17,8 +19,25 @@ interface NavbarProps {
 export function Navbar({ userRole }: NavbarProps) {
   const pathname = usePathname();
   const isAdmin = userRole === "admin";
+  const [streakCount, setStreakCount] = useState<number | null>(null);
 
   const isActive = (path: string) => pathname === path;
+
+  useEffect(() => {
+    async function fetchNavbarStreak() {
+      try {
+        const tz = new Date().getTimezoneOffset();
+        const res = await fetch(`/api/me/progress?tzOffset=${tz}`);
+        if (res.ok) {
+          const data = await res.json();
+          setStreakCount(data.streak.current);
+        }
+      } catch (err) {
+        // Safe fail
+      }
+    }
+    fetchNavbarStreak();
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200 dark:border-zinc-900 bg-white/85 dark:bg-zinc-950/85 backdrop-blur-md transition-colors duration-300">
@@ -82,6 +101,20 @@ export function Navbar({ userRole }: NavbarProps) {
                   <BookOpen className="h-3.5 w-3.5" />
                   <span>Discuss</span>
                 </Link>
+
+                <Show when="signed-in">
+                  <Link
+                    href="/profile"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold font-mono tracking-tight transition-all duration-200 ${
+                      isActive("/profile")
+                        ? "bg-zinc-100 dark:bg-zinc-900 text-amber-500 border border-zinc-200 dark:border-zinc-800"
+                        : "text-zinc-600 dark:text-zinc-400 hover:text-amber-500 dark:hover:text-amber-500 hover:bg-zinc-100 dark:hover:bg-zinc-900/50"
+                    }`}
+                  >
+                    <User className="h-3.5 w-3.5" />
+                    <span>Profile</span>
+                  </Link>
+                </Show>
               </>
             ) : (
               // Admin-Specific Links
@@ -90,8 +123,8 @@ export function Navbar({ userRole }: NavbarProps) {
                   href="/admin"
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold font-mono tracking-tight transition-all duration-200 ${
                     isActive("/admin")
-                      ? "bg-red-50 dark:bg-red-950/20 text-red-500 border border-red-200 dark:border-red-950/40"
-                      : "text-red-550 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/10"
+                      ? "bg-red-550/10 text-red-500 border border-red-500/20"
+                      : "text-red-500 hover:bg-red-50 dark:hover:bg-red-950/10"
                   }`}
                 >
                   <ShieldAlert className="h-3.5 w-3.5" />
@@ -143,10 +176,16 @@ export function Navbar({ userRole }: NavbarProps) {
           {/* Flame streak indicator */}
           {!isAdmin && (
             <Show when="signed-in">
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-orange-500/20 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 select-none shadow-sm">
-                <Flame className="h-3.5 w-3.5 fill-orange-500/80 dark:fill-orange-400" />
-                <span className="font-mono text-[10px] font-bold">7 Day Streak</span>
-              </div>
+              <ProfileProgressPanel
+                trigger={
+                  <button className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-orange-500/20 bg-orange-50 dark:bg-orange-950/20 text-orange-600 dark:text-orange-400 select-none shadow-sm hover:bg-orange-100 dark:hover:bg-orange-950/45 transition-colors cursor-pointer text-left">
+                    <Flame className="h-3.5 w-3.5 fill-orange-500/80 dark:fill-orange-400 animate-pulse" />
+                    <span className="font-mono text-[10px] font-bold">
+                      {streakCount !== null ? `${streakCount} Day Streak` : "Streak"}
+                    </span>
+                  </button>
+                }
+              />
             </Show>
           )}
 

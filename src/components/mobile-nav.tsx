@@ -4,7 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Show, SignInButton, SignUpButton } from "@clerk/nextjs";
-import { Terminal, Trophy, Users, BookOpen, ShieldAlert, X, Menu } from "lucide-react";
+import { Terminal, Trophy, Users, BookOpen, ShieldAlert, X, Menu, User } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
 
 interface MobileNavProps {
@@ -115,6 +115,21 @@ export function MobileNav({ isAdminUser }: MobileNavProps) {
             <BookOpen className="h-4 w-4" />
             <span>Discuss</span>
           </Link>
+
+          <Show when="signed-in">
+            <Link
+              href="/profile"
+              onClick={closeMenu}
+              className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-semibold font-mono transition-all ${
+                isActive("/profile")
+                  ? "bg-zinc-100 dark:bg-zinc-900 text-amber-500 border border-zinc-200 dark:border-zinc-800"
+                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200"
+              }`}
+            >
+              <User className="h-4 w-4" />
+              <span>Profile</span>
+            </Link>
+          </Show>
 
           {/* Admin gate */}
           {isAdminUser && (
