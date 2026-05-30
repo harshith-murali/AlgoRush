@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import type { ProblemRunResponse, ProblemRunCaseResult } from "@/types/problem";
 import { LANGUAGE_TO_JUDGE0_ID, Judge0Status, JUDGE0_STATUS_DESCRIPTIONS } from "@/lib/judge0";

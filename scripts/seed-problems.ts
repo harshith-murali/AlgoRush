@@ -1,5 +1,5 @@
 import { prisma } from "../src/lib/db";
-import { Difficulty, Language, UserRole } from "../src/generated/prisma";
+import { Difficulty, Language, UserRole } from "@prisma/client";
 
 interface ProblemData {
   title: string;

@@ -4,7 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "docker compose up -d && prisma migrate deploy && npm run db:seed && next dev",
-    "build": "next build",
+    "postinstall": "prisma generate",
+    "build": "prisma generate && next build",
+    "vercel-build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:seed": "tsx scripts/seed-problems.ts"
@@ -29,6 +31,7 @@
     "next": "16.2.6",
     "next-themes": "^0.4.6",
     "pg": "^8.21.0",
+    "prisma": "^7.8.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
     "react-day-picker": "^10.0.1",
@@ -52,7 +55,6 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
-    "prisma": "^7.8.0",
     "tailwindcss": "^4",
     "tsx": "^4.22.3",
     "typescript": "^5"

@@ -1,4 +1,4 @@
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import axios from "axios";
 
 export const LANGUAGE_TO_JUDGE0_ID: Record<Language, number> = {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Language, SubmissionStatus, Difficulty } from "@/generated/prisma";
+import { Language, SubmissionStatus, Difficulty } from "@prisma/client";
 import { prisma } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
 import type { ProblemRunResponse, ProblemRunCaseResult } from "@/types/problem";

@@ -1,4 +1,4 @@
-import { Difficulty, Language } from "@/generated/prisma";
+import { Difficulty, Language } from "@prisma/client";
 
 export interface SampleProblem {
   title: string;

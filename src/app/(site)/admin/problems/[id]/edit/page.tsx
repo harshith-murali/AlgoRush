@@ -2,7 +2,7 @@ import React from "react";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { EditProblemForm } from "@/components/admin/edit-problem-form";
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 
 export const dynamic = "force-dynamic";
 

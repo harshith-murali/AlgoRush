@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
-import { SubmissionStatus } from "@/generated/prisma";
+import { SubmissionStatus } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {

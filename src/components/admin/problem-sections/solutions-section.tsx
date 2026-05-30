@@ -3,7 +3,7 @@
 import React from "react";
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { CreateProblemFormValues } from "../create-problem-form";
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import { SUPPORTED_LANGUAGES } from "@/lib/problem-language-templates";
 import { getSampleTemplate } from "@/lib/problem-sample-data";
 import { CheckSquare, Plus, Trash } from "lucide-react";

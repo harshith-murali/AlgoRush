@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback, useMemo } from "react";
 import { ConfettiBlast } from "@/components/ui/confetti-blast";
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import { LANGUAGE_LABELS } from "@/lib/problems/utils";
 import type { ProblemRunResponse, PublicProblemDetail } from "@/types/problem";
 import { CodeEditor, type CodeEditorHandle, type EditorSettings } from "@/components/problems/code-editor";

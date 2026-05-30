@@ -2,7 +2,7 @@
 
 import Editor from "@monaco-editor/react";
 import { useMonacoTheme } from "@/hooks/use-monaco-theme";
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import { useRef, useImperativeHandle, forwardRef, useEffect } from "react";
 import type * as MonacoNS from "monaco-editor";
 

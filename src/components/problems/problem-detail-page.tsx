@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import {
   DIFFICULTY_STYLES,
   LANGUAGE_LABELS,

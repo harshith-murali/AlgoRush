@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { currentUser } from "@clerk/nextjs/server";
-import { SubmissionStatus, Difficulty } from "@/generated/prisma";
+import { SubmissionStatus, Difficulty } from "@prisma/client";
 import { calculateStreak } from "@/lib/problems/streak";
 
 export async function GET(request: NextRequest) {

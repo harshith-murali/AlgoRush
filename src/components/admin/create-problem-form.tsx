@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Difficulty, Language } from "@/generated/prisma";
+import { Difficulty, Language } from "@prisma/client";
 import { SAMPLE_PROBLEMS, emptyDefaultValues } from "@/lib/problem-sample-data";
 
 import {

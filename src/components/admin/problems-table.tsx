@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Difficulty } from "@/generated/prisma";
+import { Difficulty } from "@prisma/client";
 import {
   Search,
   ChevronLeft,

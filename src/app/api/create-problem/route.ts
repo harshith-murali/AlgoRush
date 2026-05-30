@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
-import { Difficulty, Language, UserRole } from "@/generated/prisma";
+import { Difficulty, Language, UserRole } from "@prisma/client";
 
 import { LANGUAGE_TO_JUDGE0_ID, Judge0Status, JUDGE0_STATUS_DESCRIPTIONS } from "@/lib/judge0";
 

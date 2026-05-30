@@ -3,7 +3,7 @@ import { z } from "zod";
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 import { computeAcceptanceRate } from "@/lib/problems/utils";
-import { Difficulty, Language, UserRole } from "@/generated/prisma";
+import { Difficulty, Language, UserRole } from "@prisma/client";
 
 async function requireAdmin() {
   const clerkUser = await currentUser();

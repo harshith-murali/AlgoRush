@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useFormContext } from "react-hook-form";
 import { CreateProblemFormValues } from "../create-problem-form";
-import { Difficulty } from "@/generated/prisma";
+import { Difficulty } from "@prisma/client";
 import { Hash, X } from "lucide-react";
 
 interface SectionProps {

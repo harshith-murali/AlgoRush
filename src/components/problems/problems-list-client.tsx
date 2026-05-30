@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Difficulty } from "@/generated/prisma";
+import { Difficulty } from "@prisma/client";
 import { ProblemCard, DifficultyFilter } from "@/components/problems/problem-card";
 import { ProblemTable } from "@/components/problems/problem-table";
 import type { ProblemListItem, ProblemsListResponse } from "@/types/problem";

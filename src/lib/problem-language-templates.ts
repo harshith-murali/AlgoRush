@@ -1,4 +1,4 @@
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 
 export const SUPPORTED_LANGUAGES = [
   Language.CPP,

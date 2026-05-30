@@ -1,4 +1,4 @@
-import { Language } from "@/generated/prisma";
+import { Language } from "@prisma/client";
 import { SOLUTION_TEMPLATES } from "@/lib/problem-language-templates";
 
 export function computeAcceptanceRate(

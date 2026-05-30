@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Difficulty } from "@/generated/prisma";
+import { Difficulty } from "@prisma/client";
 import { DIFFICULTY_STYLES } from "@/lib/problems/utils";
 import type { ProblemListItem } from "@/types/problem";
 import { Search, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
