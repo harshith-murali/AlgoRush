@@ -6,7 +6,8 @@
     "dev": "docker compose up -d && next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:seed": "tsx scripts/seed-problems.ts"
   },
   "dependencies": {
     "@base-ui/react": "^1.5.0",
